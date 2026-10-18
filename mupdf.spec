@@ -2,7 +2,7 @@
 
 
 a = Analysis(
-    ['pdf.py'],
+    ['mupdf.py'],
     pathex=[],
     binaries=[],
     datas=[('icons/', 'icons/')],
