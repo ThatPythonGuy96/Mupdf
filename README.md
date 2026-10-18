@@ -45,6 +45,6 @@ The installer script expects the packaged executable at `dist\Mupdf.exe`.
 
 ## Build the Windows installer
 
-Open `Mupdf.iss` with Inno Setup Compiler and compile it after building the executable. Installing Mf registers it as an available PDF app and adds **Open with Mupdf** to the PDF right-click context menu. The installer also creates a Start Menu shortcut; the desktop shortcut is optional.
+Open `Mupdf.iss` with Inno Setup Compiler and compile it after building the executable. Installing Mupdf registers it as an available PDF app and adds **Open with Mupdf** to the PDF right-click context menu. The installer also creates a Start Menu shortcut; the desktop shortcut is optional.
 
 Uninstalling Mupdf removes the PDF context-menu entry and its app registration.

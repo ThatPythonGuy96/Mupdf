@@ -1,0 +1,97 @@
+
+name: Build Mupdf for macOS
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+jobs:
+  build-macos:
+    name: Build macOS (${{ matrix.arch }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: arm64
+            runner: macos-15
+          - arch: x86_64
+            runner: macos-15-intel
+
+    runs-on: ${{ matrix.runner }}
+
+    steps:
+      - name: Check out source code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+          python -m pip install pyinstaller
+
+      - name: Build Mupdf.app
+        shell: bash
+        run: |
+          ARGS=(
+            --noconfirm
+            --clean
+            --windowed
+            --onedir
+            --name Mupdf
+            --osx-bundle-identifier com.dsquared.mupdf
+          )
+
+          if [ -f "icons/pdf.icns" ]; then
+            ARGS+=(--icon "icons/pdf.icns")
+          fi
+
+          if [ -d "icons" ]; then
+            ARGS+=(--add-data "icons:icons")
+          fi
+
+          python -m PyInstaller "${ARGS[@]}" mupdf.py
+
+          test -d "dist/Mupdf.app"
+
+      - name: Create DMG and PKG installers
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          mkdir -p release/dmg
+
+          ditto "dist/Mupdf.app" "release/dmg/Mupdf.app"
+          ln -s /Applications "release/dmg/Applications"
+
+          hdiutil create \
+            -volname "Mupdf" \
+            -srcFolder "release/dmg" \
+            -ov \
+            -format UDZO \
+            "release/Mupdf-macos-${{ matrix.arch }}.dmg"
+
+          pkgbuild \
+            --component "dist/Mupdf.app" \
+            --install-location "/Applications" \
+            "release/Mupdf-macos-${{ matrix.arch }}.pkg"
+
+      - name: Upload installers
+        uses: actions/upload-artifact@v4
+        with:
+          name: Mupdf-macos-${{ matrix.arch }}
+          path: |
+            release/*.dmg
+            release/*.pkg
+          if-no-files-found: error
+          retention-days: 14
